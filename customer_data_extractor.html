@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Customer Data Extractor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 30px 20px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .upload-area:active {
+            transform: scale(0.98);
+            background: #eef0ff;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .upload-text {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .upload-subtext {
+            color: #888;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .options-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .option-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .option-btn {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: white;
+            color: #333;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .option-btn.active {
+            border-color: #667eea;
+            background: #f0f2ff;
+            color: #667eea;
+        }
+        
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .date-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .date-filter {
+            margin-bottom: 15px;
+        }
+        
+        .date-filter label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .date-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .results-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .copy-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .data-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+        }
+        
+        .data-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+        
+        .text-output {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .error-box {
+            background: #f8d7da;
+            border: 1px solid #dc3545;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #888;
+            padding: 30px;
+        }
+        
+        .format-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .format-valid { background: #28a745; }
+        .format-invalid { background: #dc3545; }
+
+        /* Creator Section Styles */
+        .creator-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .creator-title {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .creator-name {
+            font-size: 1.3rem;
+            color: #333;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .contact-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .contact-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 25px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .call-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .call-btn:active {
+            transform: scale(0.95);
+        }
+
+        .sms-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sms-btn:active {
+            transform: scale(0.95);
+        }
+
+        .whatsapp-btn {
+            background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+            color: white;
+        }
+
+        .whatsapp-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📄 Customer Data Extractor</h1>
+            <p>PDF se Name aur CNIC nikaalain</p>
+        </div>
+        
+        <!-- Warning Box -->
+        <div class="warning-box" id="warningBox">
+            <strong>⚠️ Format Change Detected!</strong><br>
+            PDF format different hai. Valid PDF use karein.
+        </div>
+        
+        <!-- Error Box -->
+        <div class="error-box" id="errorBox"></div>
+        
+        <!-- Upload Section -->
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">PDF File Yahan Drop Karein</div>
+                <div class="upload-subtext">Ya click karein select karne ke liye</div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf" onchange="handleFile(this.files[0])">
+        </div>
+        
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div>PDF Process Ho Rahi Hai...</div>
+        </div>
+        
+        <!-- Options Section -->
+        <div class="options-section" id="optionsSection">
+            <div class="section-title">
+                <span>⚙️</span>
+                <span>Kya Chahiye?</span>
+            </div>
+            <div class="option-buttons">
+                <button class="option-btn active" onclick="selectOption('both')" id="btnBoth">
+                    <span>👤+🆔</span>
+                    <span>Name + CNIC (Dono)</span>
+                </button>
+                <button class="option-btn" onclick="selectOption('cnic')" id="btnCnic">
+                    <span>🆔</span>
+                    <span>Sirf CNIC Number</span>
+                </button>
+                <button class="option-btn" onclick="selectOption('name')" id="btnName">
+                    <span>👤</span>
+                    <span>Sirf Name</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Date Section -->
+        <div class="date-section" id="dateSection">
+            <div class="section-title">
+                <span>📅</span>
+                <span>Date Select Karein</span>
+            </div>
+            <div class="date-filter">
+                <label>Sab Dates ya Specific Date?</label>
+                <select class="date-select" id="dateSelect" onchange="filterByDate()">
+                    <option value="all">📋 Sab Dates</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div>
+                    <div class="section-title" style="margin-bottom: 5px;">
+                        <span>📊</span>
+                        <span>Results</span>
+                    </div>
+                    <span class="results-count" id="resultsCount">0 records</span>
+                </div>
+            </div>
+            
+            <div id="outputContainer">
+                <div class="text-output" id="textOutput"></div>
+            </div>
+            
+            <button class="copy-btn" onclick="copyToClipboard()">
+                <span>📋</span>
+                <span>Copy All Data</span>
+            </button>
+        </div>
+
+        <!-- Creator Section -->
+        <div class="creator-section">
+            <div class="creator-title">Created By</div>
+            <div class="creator-name">👨‍💻 Abbas</div>
+            <div class="contact-buttons">
+                <a href="tel:03367866994" class="contact-btn call-btn">
+                    <span>📞</span>
+                    <span>Call Now</span>
+                </a>
+                <a href="sms:03367866994" class="contact-btn sms-btn">
+                    <span>💬</span>
+                    <span>Send SMS</span>
+                </a>
+                <a href="https://wa.me/923367866994" class="contact-btn whatsapp-btn">
+                    <span>📱</span>
+                    <span>WhatsApp</span>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Global variables
+        let extractedData = [];
+        let currentOption = 'both';
+        let pdfFormatValid = true;
+        
+        // Initialize PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        // Handle file upload
+        function handleFile(file) {
+            if (!file) return;
+            
+            if (file.type !== 'application/pdf') {
+                showError('❌ Sirf PDF files allowed hain!');
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('errorBox').style.display = 'none';
+            document.getElementById('warningBox').style.display = 'none';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const typedarray = new Uint8Array(e.target.result);
+                processPDF(typedarray);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Process PDF
+        async function processPDF(data) {
+            try {
+                const pdf = await pdfjsLib.getDocument({data: data}).promise;
+                let fullText = '';
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n';
+                }
+                
+                parseData(fullText);
+                
+            } catch (error) {
+                showError('❌ PDF read nahi ho saki. Dobara try karein.');
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        // Parse PDF data based on your format
+        function parseData(text) {
+            extractedData = [];
+            pdfFormatValid = true;
+            
+            // Your PDF format patterns
+            const lines = text.split('\n');
+            let currentDate = '';
+            
+            // Pattern matching for your specific PDF format
+            // Looking for: Customer Code, Name, Balance, Date, CNIC, Phone, Model, etc.
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Check for date patterns (DD-MMM-YY or DD-MMM-YYYY)
+                const dateMatch = line.match(/(\d{1,2})-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{2,4})/i);
+                if (dateMatch && !line.includes('Customer')) {
+                    currentDate = dateMatch[0];
+                }
+                
+                // Look for CNIC pattern (13 digits)
+                const cnicMatch = line.match(/\b\d{13}\b/);
+                if (cnicMatch && currentDate) {
+                    const cnic = cnicMatch[0];
+                    
+                    // Look for name (usually before CNIC in your format)
+                    let name = '';
+                    
+                    // Check previous lines for name
+                    for (let j = Math.max(0, i - 5); j < i; j++) {
+                        const prevLine = lines[j].trim();
+                        if (prevLine && !prevLine.match(/^\d+$/) && 
+                            !prevLine.includes('CS') &&
+                            !prevLine.match(/\d{13}/) &&
+                            !prevLine.match(/Date|Balance|Model/i) &&
+                            prevLine.length > 3 &&
+                            prevLine.length < 50) {
+                            name = prevLine;
+                            break;
+                        }
+                    }
+                    
+                    if (name && cnic) {
+                        extractedData.push({
+                            date: currentDate,
+                            name: name.replace(/\s+/g, ' ').trim(),
+                            cnic: cnic
+                        });
+                    }
+                }
+            }
+            
+            // Alternative parsing for table format
+            if (extractedData.length === 0) {
+                // Try table format parsing
+                const tablePattern = /CS\d+\s+([A-Za-z\s]+)\s+[\d,]+\s+(\d{1,2}-[A-Za-z]{3}-\d{2,4})\s+(\d{13})/g;
+                let match;
+                while ((match = tablePattern.exec(text)) !== null) {
+                    extractedData.push({
+                        date: match[2],
+                        name: match[1].trim(),
+                        cnic: match[3]
+                    });
+                }
+            }
+            
+            // Check if format is valid
+            if (extractedData.length === 0) {
+                pdfFormatValid = false;
+                document.getElementById('warningBox').style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
+            
+            // Remove duplicates
+            extractedData = extractedData.filter((item, index, self) =>
+                index === self.findIndex((t) => t.cnic === item.cnic)
+            );
+            
+            // Sort by date
+            extractedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Show options
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('optionsSection').style.display = 'block';
+            document.getElementById('dateSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            populateDates();
+            updateResults();
+            
+            showToast(`✅ ${extractedData.length} records extract ho gaye!`);
+        }
+        
+        // Select export option
+        function selectOption(option) {
+            currentOption = option;
+            
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById('btn' + option.charAt(0).toUpperCase() + option.slice(1)).classList.add('active');
+            
+            updateResults();
+        }
+        
+        // Populate date dropdown
+        function populateDates() {
+            const dateSelect = document.getElementById('dateSelect');
+            const uniqueDates = [...new Set(extractedData.map(item => item.date))];
+            
+            // Clear existing options except "All"
+            while (dateSelect.options.length > 1) {
+                dateSelect.remove(1);
+            }
+            
+            uniqueDates.forEach(date => {
+                const option = document.createElement('option');
+                option.value = date;
+                option.textContent = `📅 ${date}`;
+                dateSelect.appendChild(option);
+            });
+        }
+        
+        // Filter by date
+        function filterByDate() {
+            updateResults();
+        }
+        
+        // Update results display
+        function updateResults() {
+            const dateFilter = document.getElementById('dateSelect').value;
+            let filteredData = extractedData;
+            
+            if (dateFilter !== 'all') {
+                filteredData = extractedData.filter(item => item.date === dateFilter);
+            }
+            
+            let output = '';
+            
+            filteredData.forEach(item => {
+                if (currentOption === 'both') {
+                    output += `${item.name}\t${item.cnic}\n`;
+                } else if (currentOption === 'cnic') {
+                    output += `${item.cnic}\n`;
+                } else if (currentOption === 'name') {
+                    output += `${item.name}\n`;
+                }
+            });
+            
+            document.getElementById('textOutput').textContent = output || 'Koi data nahi mila';
+            document.getElementById('resultsCount').textContent = `${filteredData.length} records`;
+        }
+        
+        // Copy to clipboard
+        function copyToClipboard() {
+            const text = document.getElementById('textOutput').textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('✅ Copied! Ab paste kar sakte hain.');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('✅ Copied! Ab paste kar sakte hain.');
+            });
+        }
+        
+        // Show toast message
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Show error
+        function showError(message) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.textContent = message;
+            errorBox.style.display = 'block';
+        }
+        
+        // Drag and drop support
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.querySelector('.upload-area');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '#eef0ff';
+            });
+            
+            uploadArea.addEvent(x => {
+                uploadArea.style.background = '#f8f9ff';
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.background = '#f8f9ff';
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
